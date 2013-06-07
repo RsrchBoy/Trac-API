@@ -1,0 +1,79 @@
+#!/usr/bin/env perl
+
+use v5.10;
+use utf8;
+
+use strict;
+use warnings;
+
+use autobox::Core;
+use autobox::Base64;
+use autobox::JSON;
+
+# debugging...
+#use Smart::Comments '###';
+
+#use HTML::Tiny;
+use LWP::UserAgent;
+use JSON::RPC2::Client;
+
+use constant URL => 'https://trac.campusexplorer.com/login/jsonrpc';
+my $ua = do {
+    my $ua = LWP::UserAgent->new;
+    #$ua->credentials('trac.campusexplorer.com:443',
+        #Authorization => 'Basic ' . 'cweyl:JEUmp39C'->encode_base64->chomp,
+    #);
+    $ua;
+};
+
+my $client = JSON::RPC2::Client->new;
+
+my $method = 'ticket.getTicketFields';  # 'ticket.create'
+#my $method = 'ticket.create';
+
+my $req = $client->call($method
+    #'Add puppetlabs-nodejs module and manage our npm packages',
+    #'Currently we install our needed nodejs packages via a series of exec
+#statements; however, the nodejs module provides a "npm" provider for the
+#package native type.',
+    #{
+        ##type => 'Unknown - DO NOT CHANGE THIS',
+        #owner => 'cweyl',
+        #status => 'assigned',
+        ##component => 'Technology',
+        #technology_priority => '31',
+        #ticket_size => 'small',
+    #},
+);
+
+### $req
+
+#my $res = $ua->post(URL, { Content => $req });
+my $auth1 = 'cweyl:JEUmp39C'; #->encode_base64->chomp;
+my $auth = $auth1->encode_base64; #->chomp;
+
+### $auth1
+### $auth
+my $res = $ua->get(URL,
+    Content => $req,
+    'Content-Type' => 'application/json',
+    Authorization => "Basic $auth", # . 'cweyl:JEUmp39C'->encode_base64->chomp,
+    # XXX basic auth here
+);
+
+### $res
+
+
+my $decoded = $res->content->decode_json;
+$decoded->{jsonrpc} = '2.0'; # trac doesn't set this... sigh
+delete $decoded->{error} unless defined $decoded->{error};
+
+say $decoded->encode_json_pretty;
+
+### $decoded
+my @returns = $client->response($decoded->encode_json);
+
+
+
+say @returns->encode_json_pretty;
+
